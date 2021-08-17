@@ -44,33 +44,48 @@ After the configuation file is created, you would run `uwsgi --ini uwsgi.ini` so
 The configurations of the nginx are as follows:
 
 ```
-# the upstream component nginx needs to connect to
-upstream django {
-    server unix:///Path/To/Sock/File/SockFile.sock; # for a file socket
-}
+http {
+    
+    # resolve the MIME type of the file automatically.
+    include mime.types;
+    default_type application/octet-stream;
 
-# configuration of the server
-server {
-    # the port your site will be served on
-    listen      80;
-    root        /Path/To/IndexHtml/Directory;
-    # the domain name it will serve for
-    server_name IPAddress; # substitute your machine's IP address or FQDN
-    charset     utf-8;
-
-    # max upload size
-    client_max_body_size 75M;   # adjust to taste
-
-    location /static {
-        alias /Path/To/Staic/Directory;
+    # the upstream component nginx needs to connect to
+    upstream django {
+        server unix:///home/admin/quick_note/server/quick_note.sock; # for a file socket
     }
 
-    # Finally, send all non-media requests to the Django server.
-    location / {
-        uwsgi_pass  django;
-        include     /etc/nginx/uwsgi_params; # the uwsgi_params file you installed
-    }   
+    # configuration of the server
+    server {
+        # the port your site will be served on
+        listen      80;
+        root        /home/admin/quick_note/client/browser/dist/index.html;
+        # the domain name it will serve for
+        server_name 47.100.34.195; # substitute your machine's IP address or FQDN
+        charset     utf-8;
+
+        # max upload size
+        client_max_body_size 75M;   # adjust to taste
+
+        location /static {
+            alias /home/admin/quick_note/client/browser/dist/static;
+        }
+
+        # Finally, send all non-media requests to the Django server.
+        location / {
+            uwsgi_pass  django;
+            include     /usr/local/nginx/uwsgi_params; # the uwsgi_params file you installed
+            try_files $uri $uri/ /index.html;
+        }
+
+        location /favicon.ico {
+            root /home/admin/quick_note/client/browser/dist;
+        }
+    }
+
 }
 ```
 
 Finally, you would run `service nginx restart` to restart nginx.
+
+**NOTICE**: Remember in mind that you should modify the **ALLOWED_HOSTS** in ***settings.py*** and the **password** of the database.
